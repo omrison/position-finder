@@ -181,8 +181,8 @@ export default function Home() {
                 />
                 <Arrow />
                 <Stat
-                  label="Outside timeframe"
-                  value={stats.outsideTimeframe}
+                  label="Outside regions"
+                  value={stats.outsideRegions}
                   color="orange"
                   filtered
                 />

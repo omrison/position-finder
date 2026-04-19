@@ -32,7 +32,7 @@ function normalizeIndeedJob(raw: IndeedRawJob): RawJobResult {
 
 export interface ApifySearchResult {
   jobs: RawJobResult[];
-  stats: Pick<SearchStats, "scraped" | "duplicatesRemoved" | "outsideTimeframe">;
+  stats: Pick<SearchStats, "scraped" | "duplicatesRemoved" | "outsideRegions">;
 }
 
 export async function searchJobs(
@@ -85,10 +85,10 @@ export async function searchJobs(
   const withinTimeframe = deduped.filter(
     (job) => new Date(job.postedAt).getTime() >= cutoff
   );
-  const outsideTimeframe = deduped.length - withinTimeframe.length;
+  const outsideRegions = deduped.length - withinTimeframe.length;
 
   return {
     jobs: withinTimeframe,
-    stats: { scraped, duplicatesRemoved, outsideTimeframe },
+    stats: { scraped, duplicatesRemoved, outsideRegions },
   };
 }

@@ -104,7 +104,9 @@ export async function scoreJobs(
   return {
     jobs: finalJobs,
     stats: {
-      ...apifyStats,
+      scraped: apifyStats.scraped,
+        duplicatesRemoved: apifyStats.duplicatesRemoved,
+        outsideRegions: apifyStats.outsideRegions,
       scored: scored.length,
       belowThreshold,
       capped,

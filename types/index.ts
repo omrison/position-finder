@@ -19,7 +19,7 @@ export type Timeframe = "24h" | "48h" | "week";
 export interface SearchStats {
   scraped: number;
   duplicatesRemoved: number;
-  outsideTimeframe: number;
+  outsideRegions: number;
   scored: number;
   belowThreshold: number;
   capped: number;
