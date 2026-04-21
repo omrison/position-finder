@@ -52,7 +52,11 @@ export async function POST(req: NextRequest) {
   const apifyResult = await searchJobs(validRegions, timeframe);
   const { jobs, stats } = await scoreJobs(profile, apifyResult);
 
-  await recordOperation(session.user.id, validRegions, timeframe, stats);
+  if (session.user.id) {
+    await recordOperation(session.user.id, validRegions, timeframe, stats).catch(
+      (err) => console.error("[dal] recordOperation failed:", err)
+    );
+  }
 
   return NextResponse.json({ jobs, stats });
 }
