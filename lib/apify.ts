@@ -1,19 +1,22 @@
 import { ApifyClient } from "apify-client";
+import { z } from "zod";
 import type { JobResult, SearchStats } from "@/types";
 import { TIMEFRAME_MS } from "@/lib/constants";
 
 const client = new ApifyClient({ token: process.env.APIFY_API_TOKEN });
 
-interface IndeedRawJob {
-  positionName?: string;
-  company?: string;
-  location?: string;
-  postingDateParsed?: string;
-  postedAt?: string;
-  externalApplyLink?: string;
-  url?: string;
-  description?: string;
-}
+const IndeedRawJobSchema = z.object({
+  positionName: z.string().optional(),
+  company: z.string().optional(),
+  location: z.string().optional(),
+  postingDateParsed: z.string().optional(),
+  postedAt: z.string().optional(),
+  externalApplyLink: z.string().optional(),
+  url: z.string().optional(),
+  description: z.string().optional(),
+});
+
+type IndeedRawJob = z.infer<typeof IndeedRawJobSchema>;
 
 export type RawJobResult = JobResult & { description: string };
 
@@ -61,7 +64,10 @@ export async function searchJobs(
           .dataset(run.defaultDatasetId)
           .listItems();
         console.log(`[apify] Indeed "${location}": ${items.length} items, status: ${run.status}`);
-        return (items as IndeedRawJob[]).map(normalizeIndeedJob);
+        return items
+          .map((item) => IndeedRawJobSchema.safeParse(item))
+          .filter((r) => r.success)
+          .map((r) => normalizeIndeedJob((r as z.ZodSafeParseSuccess<IndeedRawJob>).data));
       })
       .catch((err) => {
         console.error(`[apify] Indeed "${location}" failed:`, err?.message ?? err);

@@ -5,17 +5,29 @@ import { auth } from "@/auth";
 import { getOpenAI } from "@/lib/openai";
 import { extractCvText } from "@/lib/extractCvText";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { z } from "zod";
 import type { CandidateProfile } from "@/types";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
+const CandidateProfileSchema = z.object({
+  skills: z.array(z.string()).default([]),
+  experience: z.string().default(""),
+  seniority: z.enum(["junior", "mid", "senior", "lead"]).default("mid"),
+  roleTypes: z.array(z.string()).default([]),
+});
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+
   const session = await auth();
   if (!session?.user?.email) {
+    console.warn("[auth] Unauthenticated request to analyze-cv", { ip });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!checkRateLimit(`analyze-cv:${session.user.email}`, 10, 60_000)) {
+  if (!(await checkRateLimit(`analyze-cv:${session.user.email}`, 10, 60_000))) {
+    console.warn("[ratelimit] analyze-cv limit exceeded", { user: session.user.email });
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
@@ -72,9 +84,8 @@ ${text.slice(0, 12000)}
     response_format: { type: "json_object" },
   });
 
-  const profile = JSON.parse(
-    completion.choices[0].message.content ?? "{}"
-  ) as CandidateProfile;
+  const raw = JSON.parse(completion.choices[0].message.content ?? "{}");
+  const profile = CandidateProfileSchema.parse(raw) as CandidateProfile;
 
   return NextResponse.json(profile);
 }

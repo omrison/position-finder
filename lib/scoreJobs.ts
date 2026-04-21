@@ -1,11 +1,15 @@
+import { z } from "zod";
 import { getOpenAI } from "@/lib/openai";
 import type { CandidateProfile, JobResult, SearchStats } from "@/types";
 import type { RawJobResult, ApifySearchResult } from "@/lib/apify";
 
-interface ScoreEntry {
-  index: number;
-  score: number;
-}
+const ScoreResponseSchema = z.object({
+  scores: z
+    .array(z.object({ index: z.number().int(), score: z.number().min(1).max(10) }))
+    .default([]),
+});
+
+type ScoreEntry = { index: number; score: number };
 
 async function scoreBatch(
   profile: CandidateProfile,
@@ -43,11 +47,9 @@ Return JSON: { "scores": [{ "index": number, "score": number }] }`,
     response_format: { type: "json_object" },
   });
 
-  const parsed = JSON.parse(
-    completion.choices[0].message.content ?? '{"scores":[]}'
-  ) as { scores?: ScoreEntry[] };
-
-  return parsed.scores ?? [];
+  const raw = JSON.parse(completion.choices[0].message.content ?? "{}");
+  const { scores } = ScoreResponseSchema.parse(raw);
+  return scores;
 }
 
 export interface ScoredSearchResult {

@@ -12,12 +12,16 @@ import type { CandidateProfile } from "@/types";
 const VALID_REGIONS = new Set<string>(REGIONS);
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+
   const session = await auth();
   if (!session?.user?.email) {
+    console.warn("[auth] Unauthenticated request to search-jobs", { ip });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!checkRateLimit(`search-jobs:${session.user.email}`, 5, 60_000)) {
+  if (!(await checkRateLimit(`search-jobs:${session.user.email}`, 5, 60_000))) {
+    console.warn("[ratelimit] search-jobs limit exceeded", { user: session.user.email });
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
