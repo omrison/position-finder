@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { searchJobs } from "@/lib/apify";
 import { scoreJobs } from "@/lib/scoreJobs";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { recordOperation } from "@/lib/dal";
 import { REGIONS, TIMEFRAME_MS } from "@/lib/constants";
 import type { CandidateProfile } from "@/types";
 
@@ -46,6 +47,8 @@ export async function POST(req: NextRequest) {
 
   const apifyResult = await searchJobs(validRegions, timeframe);
   const { jobs, stats } = await scoreJobs(profile, apifyResult);
+
+  await recordOperation(session.user.id, validRegions, timeframe, stats);
 
   return NextResponse.json({ jobs, stats });
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { auth, signOut } from "@/auth";
+import { getUserOperationCount } from "@/lib/dal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,6 +26,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  const searchCount = session?.user?.id
+    ? await getUserOperationCount(session.user.id)
+    : null;
 
   return (
     <html
@@ -35,7 +39,14 @@ export default async function RootLayout({
         {session?.user && (
           <header className="bg-white border-b border-gray-200">
             <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-              <span className="text-sm text-gray-500">{session.user.email}</span>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-500">{session.user.email}</span>
+                {searchCount !== null && (
+                  <span className="text-xs text-gray-400">
+                    {searchCount} {searchCount === 1 ? "search" : "searches"}
+                  </span>
+                )}
+              </div>
               <form
                 action={async () => {
                   "use server";

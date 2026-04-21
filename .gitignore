@@ -46,3 +46,5 @@ next-env.d.ts
 
 # cv examples (personal documents)
 /cv-examples/
+
+/lib/generated/prisma
