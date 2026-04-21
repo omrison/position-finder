@@ -26,9 +26,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  const searchCount = session?.user?.id
-    ? await getUserOperationCount(session.user.id)
-    : null;
+  const searchCount =
+    session?.user?.id
+      ? await getUserOperationCount(session.user.id).catch(() => null)
+      : null;
 
   return (
     <html
